@@ -1,0 +1,11 @@
+# Runtime (SPECIFICATION.md §1 — Python >= 3.11)
+langgraph>=0.2,<1
+openai>=1.40
+chromadb>=0.5,<2
+langsmith>=0.1
+pydantic>=2.7,<3
+pydantic-settings>=2.2
+python-dotenv>=1.0
+
+# Testing (TESTING.md)
+pytest>=8.0
