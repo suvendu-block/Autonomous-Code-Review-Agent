@@ -70,3 +70,8 @@ def load_settings(env_file: str | None = ".env") -> Settings:
             loc = ".".join(str(p) for p in err["loc"]) or "settings"
             problems.append(f"{loc}: {err['msg']}")
         raise ConfigError("; ".join(problems)) from exc
+
+
+
+
+
