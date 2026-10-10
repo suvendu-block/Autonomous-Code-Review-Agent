@@ -7,6 +7,31 @@ versions follow [SemVer](https://semver.org/).
 
 ### Added
 
+- Graph implementation (T-004 … T-008): `ReviewState` (`app/state.py`), node
+  implementations in `app/nodes.py` wired linearly via LangGraph —
+  `start → plan → context_retriever → specialists → aggregate → report`.
+  `plan` fallback = run all specialists; specialists retry ×2 then record into
+  `ReviewState.errors`; `aggregate` never fails; `report` aborts on failure.
+  Temperature `0` specialists / `0.2` summarizer (`app/prompts.py`,
+  `app/llm.py`), untrusted output coerced by `app/parsing.py`.
+- Memory layer (T-009, T-010): ChromaDB collections `project_conventions`,
+  `past_reviews`, `codebase_docs`; `python -m app.ingest <repo>`
+  (`app/ingest.py`, `app/memory.py`); `context_retriever` degrades to empty
+  context + recorded error, ≤ 8 chunks.
+- LangSmith tracing (T-011): `app/tracing.py` — one trace per run, one span per
+  node, `trace_url` embedded in the report; tracing failures never break a run.
+- CLI (T-003): `python index.py review <diff|->` reads file or stdin, emits
+  markdown + `review_report.json`, exit codes `0 | 1 | 2`
+  (`SPECIFICATION.md §7`), `--help`, per-file splitting for diffs >
+  `MAX_DIFF_LINES` (`app/diff.py`, `app/runner.py`).
+- Docker image (T-012): `Dockerfile` + `.dockerignore` — non-root, no secrets
+  in layers, single entrypoint for all shapes; `fixtures/clean.patch` and
+  `fixtures/blocker.patch` for smoke runs.
+- CI (T-013): `.github/workflows/ci.yml` (pytest + image build/smoke) and
+  `review.yml` (PR review worker: exit 1 → comment + fail, exit 2 →
+  infrastructure failure).
+- Tests restructured to `tests/contract`, `tests/graph`, `tests/unit`
+  (`TESTING.md` commands); 125 tests total.
 - Config loader `app/config.py` with validation and fail-fast `ConfigError`
   (exit code `2`); `app/nodes.py` node registry; entry point prints model + node list
   (`STEPS.md §1`), covered by 15 tests.

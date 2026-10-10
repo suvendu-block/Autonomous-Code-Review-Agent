@@ -2,6 +2,9 @@
 
 Steps — From Zero to Production.
 
+> **Status:** steps 0–7 are implemented (see `CHANGELOG.md` / `TASKS.md` T-001 … T-013);
+> step 8 (webhook service) is not started; step 9 checklist below.
+
 ## 0. Environment
 
 ```bash
@@ -71,8 +74,9 @@ Long-running API receiving webhooks — see `OPERATIONS.md`, `DEPLOYMENTS.md`.
 
 ## 9. Go-live checklist
 
-- [ ] No secrets in repo (`SECURITY.md`)
-- [ ] Exit codes match spec
-- [ ] Every run produces a report or explicit error
-- [ ] LangSmith project receiving traces
-- [ ] `TROUBLESHOOTING.md` reviewed on-call
+- [x] No secrets in repo (`SECURITY.md`) — `.env` ignored, tracked files scanned
+- [x] Exit codes match spec (`tests/contract`)
+- [x] Every run produces a report or explicit error (`tests/graph`)
+- [ ] LangSmith project receiving traces — requires a real `LANGSMITH_API_KEY`; verify with
+  one live run (§5)
+- [x] `TROUBLESHOOTING.md` reviewed on-call

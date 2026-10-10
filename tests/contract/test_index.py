@@ -13,7 +13,7 @@ import index as entry
 from app.config import ConfigError
 from app.nodes import NODE_ORDER
 
-REPO_ROOT = Path(__file__).resolve().parent.parent
+REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 
 
 def test_main_prints_model_and_node_list(
@@ -63,7 +63,12 @@ def test_subprocess_success() -> None:
         cwd=REPO_ROOT,
         capture_output=True,
         text=True,
-        env={**os.environ, "LLM_API_KEY": os.environ.get("LLM_API_KEY") or "sk-test"},
+        encoding="utf-8",
+        env={
+            **os.environ,
+            "LLM_MODEL": "gpt-4o-mini",
+            "LLM_API_KEY": "sk-test",
+        },
         timeout=60,
     )
     assert result.returncode == 0, result.stderr
@@ -75,11 +80,13 @@ def test_subprocess_success() -> None:
 def test_subprocess_invalid_config_exits_2() -> None:
     env = {**os.environ, "REVIEW_SEVERITY": "extreme"}
     env.pop("LLM_API_KEY", None)
+    env.pop("LLM_MODEL", None)
     result = subprocess.run(
         [sys.executable, "index.py"],
         cwd=REPO_ROOT,
         capture_output=True,
         text=True,
+        encoding="utf-8",
         env=env,
         timeout=60,
     )

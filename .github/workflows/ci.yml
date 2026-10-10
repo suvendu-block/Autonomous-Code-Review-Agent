@@ -1,0 +1,53 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    name: Unit, graph and contract tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: python -m pip install -r requirements.txt
+      - name: Pytest (unit + graph + contract)
+        run: python -m pytest -q
+      - name: Skeleton smoke — config + node list
+        env:
+          LLM_MODEL: gpt-4o-mini
+          LLM_API_KEY: ci-placeholder
+        run: python index.py
+      - name: Skeleton smoke — missing config exits 2
+        run: |
+          set +e
+          out=$(python index.py 2>&1)
+          code=$?
+          set -e
+          echo "$out"
+          test "$code" -eq 2
+          grep -q "config error" <<< "$out"
+
+  docker:
+    name: Docker image build + smoke
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build image
+        run: docker build -t code-review-agent .
+      - name: Smoke — image boots, missing config exits 2 (TESTING.md §5)
+        run: |
+          set +e
+          out=$(docker run --rm code-review-agent 2>&1)
+          code=$?
+          set -e
+          echo "$out"
+          test "$code" -eq 2
+          grep -q "config error" <<< "$out"
+      - name: Smoke — --help exits 0
+        run: docker run --rm code-review-agent --help

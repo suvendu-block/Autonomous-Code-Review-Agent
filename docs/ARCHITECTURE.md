@@ -45,8 +45,8 @@ Architecture of the project.
 | `security_auditor` | Injection, secrets, unsafe deserialization | diff + context | `findings` |
 | `style_linter` | Naming, structure, project conventions | diff + context | `findings` |
 | `test_gap_analyzer` | Untested paths, missing cases | diff + coverage | `findings` |
-| `aggregate` | Merge, dedupe, rank by severity | all `findings` | `report` |
-| `report` | Emit PR comment / JSON artifact | `report` | output |
+| `aggregate` | Merge, dedupe, rank by severity | all `findings` | `findings` (deduped, sorted) |
+| `report` | Emit PR comment / JSON artifact | `findings`, `errors` | `report` + `review_report.json` |
 
 ## State
 

@@ -7,19 +7,40 @@ updated by the same change that invalidates it (`PRINCIPLES.md §11`).
 
 ```
 Autonomous-Code-Review-Agent/
-├── index.py                 # entry point: loads config, prints model + node list
+├── index.py                 # CLI: config skeleton + review <diff> (exit 0/1/2)
+├── conftest.py              # root pytest conftest (sys.path)
 ├── requirements.txt         # pinned dependency ranges
+├── Dockerfile               # delivery unit (DEPLOYMENTS.md)
+├── .dockerignore            # keeps secrets/tests/docs out of layers
 ├── .env.example             # config template (SECURITY.md)
 ├── .gitignore               # excludes .env, .venv/, .chroma/
+├── .github/
+│   └── workflows/
+│       ├── ci.yml           # pytest + image build/smoke
+│       └── review.yml       # PR review worker (STEPS.md §7)
 ├── app/
 │   ├── __init__.py
 │   ├── config.py            # env loader + validation (SPECIFICATION.md §2)
 │   ├── models.py            # Finding, ReviewReport contracts (SPECIFICATION.md §3)
-│   └── nodes.py             # NODE_ORDER registry (ARCHITECTURE.md)
+│   ├── state.py             # ReviewState TypedDict (ARCHITECTURE.md)
+│   ├── nodes.py             # NODE_ORDER + node impls + build_graph
+│   ├── llm.py               # OpenAI-compatible client, temperature 0
+│   ├── prompts.py           # specialist + summarizer prompts
+│   ├── parsing.py           # untrusted LLM text → Finding coercion
+│   ├── diff.py              # parse/split diffs (MAX_DIFF_LINES guard)
+│   ├── render.py            # markdown PR comment (SPECIFICATION.md §6)
+│   ├── tracing.py           # LangSmith trace + per-node spans
+│   ├── memory.py            # ChromaDB collections, ingest, retrieval
+│   ├── runner.py            # run_review: chunks → graph → exit code
+│   └── ingest.py            # python -m app.ingest (STEPS.md §4)
+├── fixtures/
+│   ├── clean.patch          # smoke: expect exit 0
+│   └── blocker.patch        # smoke: expect exit 1
 ├── tests/
-│   ├── test_config.py       # config contract tests
-│   ├── test_models.py       # data contract tests
-│   └── test_index.py        # entry point + exit-code tests
+│   ├── conftest.py          # shared fixtures (settings, FakeLLM, diffs)
+│   ├── contract/            # config, models, exit codes, CLI
+│   ├── graph/               # node wiring + failure paths
+│   └── unit/                # diff, parsing, render, memory, tracing, llm
 └── docs/
     ├── ALL.md               # overview, docs map (start here)
     ├── PROJECT.md           # name, stack, goals, non-goals
@@ -61,18 +82,11 @@ Autonomous-Code-Review-Agent/
 | Meta | `FILES.md`, `CHANGELOG.md` |
 | Overview | `ALL.md`, `PROJECT.md`, `REQUIREMENTS.md`, `thoughts.md` |
 
-## Planned code layout (not yet created)
+## Not yet created
 
 | Path | Purpose | Roadmap phase |
 |---|---|---|
-| `app/cli.py` | `review <diff>` entrypoint | 1 |
-| `app/graph/state.py` | `ReviewState` | 2 |
-| `app/graph/nodes/` | `start`, `plan`, specialists, `aggregate`, `report` | 2 |
-| `app/memory/chroma.py` | collections + ingestion | 3 |
-| `app/tracing.py` | LangSmith spans | 4 |
-| `Dockerfile` | delivery unit | 5 |
-| `tests/unit`, `tests/graph`, `tests/contract` | see `TESTING.md` | 1–2 |
-| `requirements.txt` | pinned dependencies | 1 |
+| `app/service.py` | webhook service entrypoint (T-014) | 5 |
 
 ## Rules
 

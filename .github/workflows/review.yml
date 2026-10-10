@@ -1,0 +1,105 @@
+# PR review worker (STEPS.md §7, DEPLOYMENTS.md — shape 2).
+# Exit 1 = blocker/major findings → comment + fail check.
+# Exit 2 = infrastructure failure → fail check, never a code verdict.
+name: PR Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check credentials
+        id: gate
+        env:
+          LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+        run: |
+          if [ -n "$LLM_API_KEY" ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::LLM_API_KEY secret not configured — review skipped"
+          fi
+
+      - name: Build image
+        if: steps.gate.outputs.enabled == 'true'
+        run: docker build -t code-review-agent .
+
+      - name: Generate PR diff
+        if: steps.gate.outputs.enabled == 'true'
+        run: |
+          git fetch origin "${{ github.base_ref }}"
+          git diff --merge-base "origin/${{ github.base_ref }}" HEAD > pr.diff
+          echo "diff lines: $(wc -l < pr.diff)"
+
+      - name: Run review
+        if: steps.gate.outputs.enabled == 'true'
+        id: review
+        env:
+          LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+          LANGSMITH_API_KEY: ${{ secrets.LANGSMITH_API_KEY }}
+        run: |
+          LLM_MODEL="${{ secrets.LLM_MODEL }}"
+          export LLM_MODEL="${LLM_MODEL:-gpt-4o-mini}"
+          export LANGSMITH_PROJECT="code-review-agent"
+          set +e
+          docker run --rm -v "$PWD:/repo" \
+            -e LLM_API_KEY -e LLM_MODEL -e LANGSMITH_API_KEY -e LANGSMITH_PROJECT \
+            code-review-agent review /repo/pr.diff \
+            -o /repo/review_report.json \
+            --repo "$GITHUB_REPOSITORY" --no-record \
+            > review.md 2> review.err
+          code=$?
+          set -e
+          echo "code=$code" >> "$GITHUB_OUTPUT"
+          echo "review exit code: $code"
+          cat review.err
+          test "$code" -le 2
+
+      - name: Upload report artifact
+        if: steps.gate.outputs.enabled == 'true' && hashFiles('review_report.json') != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: review-report
+          path: |
+            review_report.json
+            review.md
+
+      - name: Comment findings on the PR
+        if: steps.gate.outputs.enabled == 'true' && steps.review.outputs.code == '1'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh pr comment "${{ github.event.pull_request.number }}" --body-file review.md
+
+      - name: Verdict
+        if: steps.gate.outputs.enabled == 'true'
+        env:
+          CODE: ${{ steps.review.outputs.code }}
+        run: |
+          case "$CODE" in
+            0)
+              echo "Review clean — no blocker/major findings."
+              ;;
+            1)
+              echo "::error::Review found blocker/major findings (exit 1)."
+              exit 1
+              ;;
+            2)
+              echo "::error::Review infrastructure failure (exit 2) — fix the run, not the code."
+              exit 1
+              ;;
+            *)
+              echo "::error::Unexpected review exit code: $CODE"
+              exit 1
+              ;;
+          esac

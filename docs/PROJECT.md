@@ -45,4 +45,6 @@ and posts a structured, actionable review comment.
 
 ## Status
 
-Early development (skeleton). See `CHANGELOG.md` and `ROADMAP.md`.
+Built: config + contracts, LangGraph review pipeline, ChromaDB memory, LangSmith tracing,
+`review <diff>` CLI, Docker image, CI workflows (see `CHANGELOG.md`, `TASKS.md`).
+Not started: webhook service (T-014). See `ROADMAP.md`.

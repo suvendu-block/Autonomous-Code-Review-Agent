@@ -16,8 +16,9 @@ What we test and how.
 
 ```bash
 python -m pytest                 # all tests
-python -m pytest tests/unit      # contracts only
-python -m pytest tests/graph     # graph wiring
+python -m pytest tests/unit      # pure functions (diff, parsing, render, memory)
+python -m pytest tests/graph     # graph wiring + failure paths
+python -m pytest tests/contract  # contracts, exit codes, CLI
 python index.py                  # smoke: config + node list
 ```
 

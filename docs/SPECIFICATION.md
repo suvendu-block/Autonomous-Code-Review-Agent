@@ -23,6 +23,9 @@ All config via environment variables (12-factor):
 | `MAX_DIFF_LINES` | no | `3000` | Truncation guard |
 | `REVIEW_SEVERITY` | no | `normal` | `strict` \| `normal` \| `lenient` |
 
+`REVIEW_SEVERITY` filters report content: `lenient` drops `info` findings, `normal` and
+`strict` keep everything. Exit codes are unaffected (`§7`).
+
 ## 3. Data contracts
 
 ### Finding
