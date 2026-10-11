@@ -7,6 +7,7 @@ updated by the same change that invalidates it (`PRINCIPLES.md §11`).
 
 ```
 Autonomous-Code-Review-Agent/
+├── README.md                # project overview, quick start, usage
 ├── index.py                 # CLI: config skeleton + review <diff> (exit 0/1/2)
 ├── conftest.py              # root pytest conftest (sys.path)
 ├── requirements.txt         # pinned dependency ranges
